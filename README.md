@@ -59,15 +59,8 @@ CUDA_VISIBLE_DEVICES=0 nohuppython -m torch.distributed.run --nproc_per_node=1 -
 
 
 # Train QSAR models
-conda activate propepdesigner
-cd pepQSAR/CorePep_MLP/
-python ./train_config.py
-
-
-
-### QSAR models
-
 ```bash
+conda activate propepdesigner
 cd pepQSAR/Backbone_QSAR/ && python train_config.py    # Backbone MLP
 cd pepQSAR/Full_QSAR/      && python train_config.py    # Full-sequence Transformer
 ```
