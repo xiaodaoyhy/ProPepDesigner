@@ -97,4 +97,4 @@ Manuscript in preparation/under review. The citation will be updated shortly upo
 [MIT License](LICENSE)
 
 ## Code Availability
-The source code is provided for academic use. For commercial use, please contact (Hongyan Yin, 18810910113@163.com)
+The source code is provided for academic use.
