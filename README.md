@@ -22,7 +22,7 @@ ProPepDesigner is a hierarchical computational workflow that integrates deep gen
 ## Installation
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/xiaodaoyhy/ProPepDesigner.git
 cd ProPepDesigner
 conda env create -f environment.yml
 conda activate propepdesigner
