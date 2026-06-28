@@ -1,0 +1,15 @@
+{
+  "name": "finetune",
+  "training_data_path": "../data/result/finetune_train.csv",
+  "validation_data_path": "../data/result/finetune_validation.csv",
+  "save_directory": "../GenePeptide/model/finetune",
+  "batch_size": 48,
+  "num_epoch": 50,
+  "starting_epoch": 1,
+  "max_sequence_length": 1400,
+  "run_type": "training",
+  "pretrained_model_path": "../GenePeptide/model/base/checkpoint/model_42.ckpt",
+  "extend_vocabulary": true,
+  "pretrained_optimizer_path": null,
+  "reset_optimizer": true
+}

@@ -1,0 +1,74 @@
+{
+  "name": "RL",
+  "model_type": "mol2mol",
+  "model_path": "../GenePeptide/model/finetune/checkpoint/model_46.ckpt",
+  "input_sequence": "?|?|?|NCC(=O)|N[C@@H]([C@@H](C)O)C(=O)|?|N[C@@H]([C@@H](C)O)C(=O)|N[C@@H](CO)C(=O)|N[C@@H](CC(=O)O)C(=O)|?|N[C@@H](CO)C(=O)|N[C@@H]([C@H](CC)C)C(=O)|?|N[C@@H](CC(C)C)C(=O)|N[C@@H](CC(=O)O)C(=O)|?|?|N[C@@H](C)C(=O)|?|?|?|N[C@@H](Cc1ccccc1)C(=O)|N[C@@H]([C@H](CC)C)C(=O)|?|?|N[C@@H](CC(C)C)C(=O)|?|N[C@@H](CCC(=O)O)C(=O)|?|NCC(=O)|N1[C@@H](CCC1)C(=O)|N[C@@H](CO)C(=O)|?|NCC(=O)|?|N1[C@@H](CCC1)C(=O)|N1[C@@H](CCC1)C(=O)|N1[C@@H](CCC1)C(=O)|N[C@@H](CO)C(=O)O",
+  "learning_configuration": {
+    "number_steps": 1000,
+    "batch_size": 32,
+    "score_multiplier": 80,
+    "learning_rate": 0.0001,
+    "distance_threshold": -20
+  },
+  "scoring_function": {
+    "scoring_function": "geometric_mean",
+    "scoring_components": [
+      {
+        "name": "predictive_model_GIPR",
+        "weight": 1,
+        "specific_parameters": {
+          "model_path": "cd ../pepQSAR/Backbone_QSAR/seed_40",
+          "transformation": { "transformation_type": "sigmoid", "low": 8.5, "high": 11.0, "k": 0.5 }
+        }
+      },
+      {
+        "name": "predictive_model_GLP1R",
+        "weight": 1,
+        "specific_parameters": {
+          "model_path": "cd ../pepQSAR/Backbone_QSAR/seed_40",
+          "transformation": { "transformation_type": "sigmoid", "low": 8.5, "high": 11.0, "k": 0.5 }
+        }
+      },
+      {
+        "name": "predictive_model_GCGR",
+        "weight": 1,
+        "specific_parameters": {
+          "model_path": "cd ../pepQSAR/Backbone_QSAR/seed_40",
+          "transformation": { "transformation_type": "sigmoid", "low": 8.5, "high": 11.0, "k": 0.5 }
+        }
+      },
+
+      {
+        "name": "Model_AD",
+        "weight": 2,
+        "specific_parameters": 
+        {
+            "transformation": 
+            {
+            "transformation_type": "no_transformation"
+            },
+          "model_path": "cd ../pepQSAR/Backbone_QSAR/seed_40"
+        }
+      },
+
+      {
+        "name": "lipophilicity",
+        "weight": 1,
+        "specific_parameters": {
+          "transformation": { "transformation_type": "step", "low": -18.0, "high": -13.0 }
+        }
+      }
+    ]
+  },
+  "logging": {
+    "logging_path": "../GenePeptide/model/RL/tensorboard",
+    "result_path": "../GenePeptide/model/RL/results"
+  },
+  "diversity_filter": {
+    "name": "NoFilterWithPenalty",
+    "score_threshold": 0.4,
+    "bucket_size": 25,
+    "similarity_threshold": 0.85,
+    "penalty": 0.5
+  }
+}

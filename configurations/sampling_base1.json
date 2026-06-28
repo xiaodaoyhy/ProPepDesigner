@@ -1,0 +1,16 @@
+{
+  "model_type": "mol2mol",
+  "model_path": "../GenePeptide/model/base/checkpoint/model_42.ckpt",
+  "results_output": "../GenePeptide/model/base/sampling/targetTest_test_2_base_model42_output.csv",
+  "input_sequences_path": "../data/result/finetune_test.csv",
+  "batch_size": 64,
+  "num_samples": 500,
+  "beam_size": 1000,
+
+  "decode_type": "multinomial",
+  "temperature": 1.0,
+  "num_workers": 16,
+  "sequences_per_chunk": 16,
+  "show_progress": true,
+  "run_type": "sampling"
+}
