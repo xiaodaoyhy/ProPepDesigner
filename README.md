@@ -59,10 +59,11 @@ CUDA_VISIBLE_DEVICES=0 nohuppython -m torch.distributed.run --nproc_per_node=1 -
 
 
 # Train QSAR models
+
 ```bash
 conda activate propepdesigner
 cd pepQSAR/Backbone_QSAR/ && python train_config.py    # Backbone MLP
-cd pepQSAR/Full_QSAR/      && python train_config.py    # Full-sequence Transformer
+cd pepQSAR/Full_QSAR/ && python train_config.py    # Full-sequence Transformer
 ```
 
 ---
@@ -90,4 +91,4 @@ Manuscript in preparation/under review. The citation will be updated shortly upo
 [MIT License](LICENSE)
 
 ## Code Availability
-The source code is provided for academic use.
+The source code is provided for academic use. For commercial use, please contact (Hongyan Yin, 18810910113@163.com)

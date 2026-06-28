@@ -7,8 +7,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="propepdesigner",
-    version="1.0",
-    author="XX",
+    version="1.0.0",
+    author="Hongyan Yin",
     author_email="18810910113@163.com",
     description="ProPepDesigner: AI driving  de novo design of long-acting GIPR/GLP-1R/GCGR triple agonists for obesity therapy",
     long_description=long_description,
