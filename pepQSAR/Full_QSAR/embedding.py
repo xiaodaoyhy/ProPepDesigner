@@ -326,7 +326,7 @@ def getEmbedding(
     
     if 'onehot' in feature_type:
         print("Computing onehot features...")
-        onehot_feats = create_onehot_embedding(clean_fasta_ls)
+        onehot_feats = create_onehot_embedding(fasta_list)
 
 
     embeddings = []

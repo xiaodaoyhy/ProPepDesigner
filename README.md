@@ -55,7 +55,7 @@ pip install -i https://pypi.anaconda.org/openeye/simple openeye-toolkits-python3
 |--------|-------------|
 | `GenePeptide/` | mol2mol generative model: pre-training, finetuning, reinforcement learning (RL), sampling |
 | `pepQSAR/Backbone_QSAR/` | Backbone multi-task MLP QSAR (RL scoring) |
-| `pepQSAR/Full_QSAR/` | Full-sequence multi-task Transformer QSAR |
+| `pepQSAR/Full_QSAR/` | Full-structure multi-task Transformer QSAR |
 | `data/` | Data preprocessing scripts and datasets |
 | `configurations/` | JSON configs for training, RL, and sampling |
 | `myutils/` | SMILES ↔ sequence conversion, sampling evaluation |
@@ -76,8 +76,8 @@ nohup python -m torch.distributed.run --nproc_per_node=<N> --master_port=<PORT> 
   input_to_training.py --config ../configurations/finetune.json > finetune.log 2>&1 &
 
 # Reinforcement learning
-nohup python -m torch.distributed.run --nproc_per_node=<N> --master_port=<PORT> \
-  input_to_reinforcement_learning.py ../configurations/RL_finetune_model.json > RL_finetune_model.log 
+CUDA_VISIBLE_DEVICES=<N> nohup python input_to_reinforcement_learning.py ../configurations/RL_finetune_model.json > \
+  RL_finetune_model.log 2>&1 &
 
 # Sampling
 CUDA_VISIBLE_DEVICES=<N> nohup python -m torch.distributed.run --nproc_per_node=<N> --master_port=<PORT> \
@@ -91,7 +91,8 @@ CUDA_VISIBLE_DEVICES=<N> nohup python -m torch.distributed.run --nproc_per_node=
 ```bash
 conda activate propepdesigner
 cd pepQSAR/Backbone_QSAR/ && python train_config.py    # Backbone MLP
-cd pepQSAR/Full_QSAR/ && python train_config.py    # Full-sequence Transformer
+cd pepQSAR/Full_QSAR/ && python train_config.py    # Full-structure Transformer
+
 ```
 
 ---

@@ -8,10 +8,10 @@ from typing import List, Tuple
 
 from rdkit import RDLogger
 
-# 完全禁用RDKit的所有警告
+# Completely disable all RDKit warnings
 RDLogger.DisableLog('rdApp.*')
 
-# 天然氨基酸 SMILES 字符串字典
+# Dictionary of natural amino acid SMILES strings
 natural_aa_smiles ={'R': 'N=C(N)NCCC[C@H](N)C(=O)O',
  'H': 'N[C@@H](Cc1c[nH]cn1)C(=O)O',
  'K': 'NCCCC[C@H](N)C(=O)O',
@@ -35,20 +35,20 @@ natural_aa_smiles ={'R': 'N=C(N)NCCC[C@H](N)C(=O)O',
 
 
 def calculate_all_descriptors(smiles_dict):
-    """为字典中的每个SMILES计算所有可用的描述符。"""
+    """Calculate all available descriptors for each SMILES in the dictionary."""
     mols = {name: Chem.MolFromSmiles(smiles) for name, smiles in smiles_dict.items()}
-    # 移除无法解析的分子
+    # Remove molecules that cannot be parsed
     mols = {name: mol for name, mol in mols.items() if mol is not None}
-    # 存储所有描述符数据的 DataFrame
+    # DataFrame to store all descriptor data
     all_results = []
-    
+
     for name, mol in mols.items():
-        # 使用 CalcMolDescriptors 计算所有描述符
+        # Use CalcMolDescriptors to calculate all descriptors
         desc_values = Descriptors.CalcMolDescriptors(mol)
-        desc_values['Name'] = name  # 添加名称列
+        desc_values['Name'] = name  # Add the name column
         all_results.append(desc_values)
-    
-    # 创建DataFrame
+
+    # Create DataFrame
     df_all_desc = pd.DataFrame(all_results)
     df_all_desc.set_index('Name', inplace=True)
     
@@ -57,20 +57,20 @@ def calculate_all_descriptors(smiles_dict):
 
 def _prepare_natural_reference(method: str = "cosine"):
     """
-    预计算天然氨基酸描述符参考矩阵（只计算一次）。
+    Precompute the natural amino acid descriptor reference matrix (computed only once).
 
-    返回:
+    Returns:
         natural_names: pd.Index
         valid_cols: List[str]
         scaler: StandardScaler
         scaled_natural: np.ndarray, shape [n_natural, n_features]
     """
     if method not in {"euclidean", "cosine"}:
-        raise ValueError("method 必须是 'euclidean' 或 'cosine'")
+        raise ValueError("method must be 'euclidean' or 'cosine'")
 
     df_natural = calculate_all_descriptors(natural_aa_smiles)
 
-    # 移除包含 NaN/Inf 的列（天然参考端）
+    # Remove columns containing NaN/Inf (natural reference side)
     valid_cols = []
     for col in df_natural.columns:
         if df_natural[col].isna().any() or np.isinf(df_natural[col]).any():
@@ -86,40 +86,40 @@ def _prepare_natural_reference(method: str = "cosine"):
     return natural_names, valid_cols, scaler, scaled_natural
 
 
-# 模块加载时预先准备天然AA参考（避免每次调用重复计算）
+# Pre-prepare the natural AA reference at module load time (avoid recomputing on every call)
 _NATURAL_NAMES, _VALID_COLS, _SCALER, _SCALED_NATURAL = _prepare_natural_reference(method="cosine")
 
 def map_single_smiles_to_aa(smiles: str, topk: int = 1):
     """
-    输入单个氨基酸的 SMILES，返回最相似的天然氨基酸单字母。
+    Input the SMILES of a single amino acid, return the single-letter code of the most similar natural amino acid.
 
-    说明：
-    - 这里使用 RDKit 的 CalcMolDescriptors 生成一组分子描述符，
-      然后以“天然氨基酸（单体）”作为参考集合做相似性匹配。
-    - 为了效率，天然氨基酸参考描述符会在模块加载时预先计算一次。
+    Notes:
+    - RDKit's CalcMolDescriptors is used to generate a set of molecular descriptors,
+      which are then matched for similarity against the "natural amino acid (monomer)" reference set.
+    - For efficiency, the natural amino acid reference descriptors are precomputed once at module load time.
 
-    参数:
+    Args:
         smiles: str
-            非天然氨基酸的SMILES
+            SMILES of the non-natural amino acid
 
         topk: int
-            返回 topk 个候选（包含分数），便于你检查映射是否合理
+            Return topk candidates (with scores) so you can check whether the mapping is reasonable
 
-    返回:
+    Returns:
         best_match: str
-            最匹配的天然氨基酸单字母
+            The single-letter code of the best-matching natural amino acid
         topk_matches: List[Tuple[str, float]]
-            topk 候选列表 [(aa, score), ...]
-            - method='cosine' 时 score 为相似度（越大越好）
+            List of topk candidates [(aa, score), ...]
+            - When method='cosine', score is the similarity (higher is better)
     """
 
     mol = Chem.MolFromSmiles(smiles)
 
-    # 计算 query 描述符，并对齐到 valid_cols
+    # Compute the query descriptors and align them to valid_cols
     desc = Descriptors.CalcMolDescriptors(mol)
     x = np.array([desc[c] for c in _VALID_COLS], dtype=float).reshape(1, -1)
 
-    # 标准化到天然AA分布
+    # Standardize to the natural AA distribution
     x_scaled = _SCALER.transform(x)[0]
 
     scores: List[Tuple[str, float]] = []
@@ -129,7 +129,7 @@ def map_single_smiles_to_aa(smiles: str, topk: int = 1):
         scores.append((aa, score))
 
 
-    scores.sort(key=lambda t: t[1], reverse=True)  # 相似度大优先
+    scores.sort(key=lambda t: t[1], reverse=True)  # Higher similarity first
     best_match = scores[0][0]
     return best_match, scores[: max(1, int(topk))]
 
@@ -138,7 +138,7 @@ def map_single_smiles_to_aa(smiles: str, topk: int = 1):
 
 if __name__ == "__main__":
 
-    test_smiles = "N[C@](CC(C)C)(C)C(=O)O"  # V 的单体 SMILES
+    test_smiles = "N[C@](CC(C)C)(C)C(=O)O"  # SMILES of the V monomer
     best, top = map_single_smiles_to_aa(test_smiles, topk=1)
     best = map_single_smiles_to_aa(test_smiles, topk=1)
 

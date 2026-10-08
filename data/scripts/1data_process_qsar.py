@@ -86,7 +86,7 @@ for activity in activity_name:
 
 # Drop rows where all three activity values are NaN
 summary_data = summary_data[~summary_data[['mean_pEC50_'+i for i in activity_name]].isna().all(axis=1)]
-summary_data.to_csv(outdir / 'process_summary1_new.csv', index=None)
+summary_data.to_csv(outdir / 'TargetData.csv', index=None)
 print(f'All data processed. Final row count: {len(summary_data)}')
 summary_data['aa_count'] = summary_data[sequence_model_name].apply(lambda x: Counter(eval(x.replace('*',''))))
 counts = Counter()

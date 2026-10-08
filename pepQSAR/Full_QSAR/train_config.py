@@ -16,19 +16,22 @@ if __name__ == "__main__":
 
 
     run_type='predict'
-    csv_path="../../data/result/filter_full_seq.csv"
+    # csv_path="../../data/result/filter_full_seq.csv"
 
 
     seed_ls = [5,25,39,44,63]
-
     model_dirs = Path(__file__).resolve().parent
+    # Available: 'random', 'label_stratify', 'sequence_cluster'
+    # split_method = 'label_stratify'
+    # split_method = 'sequence_cluster'
+    split_method="ecfp_cluster"
 
 
     # ====== Configuration template ======
     # Base config (file paths & task names)
     for seed in seed_ls:
-        model_dir = Path(model_dirs) / f'seed_{seed}'
-        # csv_path = model_dir / 'TargetData_split.csv'
+        model_dir = Path(model_dirs) / f'seed_{split_method}_{seed}'
+        csv_path = model_dir / 'TargetData_split.csv'
 
         base_kwargs = dict(
             run_type=run_type,
@@ -37,6 +40,7 @@ if __name__ == "__main__":
             model_dir=model_dir,
             peptide_seq_name='pep_sequence_model',
             peptide_smis_name='pep_smiles_model',
+            smiles_name="washsmi_Iso",
             activity_columns=task_name,
             feature_type=feature_type
         )
@@ -47,7 +51,12 @@ if __name__ == "__main__":
             batch_size=64,
             num_epochs=100,
             split_ratio=0.1,
-            split_method='stratify',
+            split_method=split_method, 
+            sequence_identity_threshold=0.95,
+            ecfp_similarity_threshold=0.95,
+            ecfp_radius=3,
+            ecfp_n_bits=1024,
+            ecfp_use_chirality=True,
             early_stop_patience=10,    # Early stopping patience
             d_model=384,
             nhead=8,

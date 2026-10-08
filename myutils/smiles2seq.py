@@ -3,7 +3,7 @@ from rdkit.Chem import Draw, rdmolops, AllChem
 from rdkit.Chem.MolStandardize import rdMolStandardize
 import pandas as pd
 from rdkit import RDLogger
-# 禁用所有rdApp.*相关的警告
+# Disable all rdApp.* related warnings
 RDLogger.DisableLog('rdApp.*')
 from rdkit.Chem.MolStandardize import rdMolStandardize
 from openbabel import openbabel
@@ -12,20 +12,20 @@ import re
 from itertools import chain
 from pathlib import Path
 
-# 氨基酸的CHUCKLES表示
+# CHUCKLES representation of amino acids
 def convert_to_chuckles(aa_smiles):
     try:
         mol = pybel.readstring('smi', aa_smiles)
-        n_term_pat = pybel.Smarts('[$([ND1,ND2]CC(O)=O)]') # 通过SMARTS模式匹配 N 端
-        c_term_pat = pybel.Smarts('[$([OD1]C(=O)C[ND1,ND2])]') # 通过SMARTS模式匹配 C 端
-        # 是N端和C端原子的索引
+        n_term_pat = pybel.Smarts('[$([ND1,ND2]CC(O)=O)]') # Match the N-terminus via SMARTS pattern
+        c_term_pat = pybel.Smarts('[$([OD1]C(=O)C[ND1,ND2])]') # Match the C-terminus via SMARTS pattern
+        # Indices of the N-terminal and C-terminal atoms
         n_term_idx = n_term_pat.findall(mol)[0][0] 
         c_term_idx = c_term_pat.findall(mol)[0][0]
-        # 使用OBConversion重排原子顺序，将N端和C端原子设为SMILES的起点和终点
+        # Use OBConversion to rearrange atom order, setting the N-terminal and C-terminal atoms as the start and end of the SMILES
         rearranger = openbabel.OBConversion()
         rearranger.SetInAndOutFormats('smi', 'smi')
-        rearranger.AddOption('f', openbabel.OBConversion.OUTOPTIONS, str(n_term_idx)) # 指定SMILES的起始原子
-        rearranger.AddOption('l', openbabel.OBConversion.OUTOPTIONS, str(c_term_idx)) # 指定SMILES的结束原子
+        rearranger.AddOption('f', openbabel.OBConversion.OUTOPTIONS, str(n_term_idx)) # Specify the starting atom of the SMILES
+        rearranger.AddOption('l', openbabel.OBConversion.OUTOPTIONS, str(c_term_idx)) # Specify the ending atom of the SMILES
         outmol = openbabel.OBMol()
         rearranger.ReadString(outmol, aa_smiles)
         return rearranger.WriteString(outmol).strip()
@@ -55,8 +55,8 @@ def remove_backbone_charges(original_smiles):
 def smiles_to_chuckles(amino_acid):
     # Preprocessing
     uncharged_aa = uncharger(amino_acid)
-    if uncharged_aa:  # 处理带电荷的结构
-        uncharged_aa = remove_backbone_charges(uncharged_aa) # 处理带电荷的结构
+    if uncharged_aa:  # Handle charged structures
+        uncharged_aa = remove_backbone_charges(uncharged_aa) # Handle charged structures
         # Convert to CHUCKLES
         chuckles_aa = convert_to_chuckles(uncharged_aa)
     else:
@@ -64,15 +64,15 @@ def smiles_to_chuckles(amino_acid):
     return chuckles_aa
 
 
-####### 切割分子
+####### Fragment the molecule
 def smiles2seq(smiles: str, df: pd.DataFrame):
     """
     
-    :param smiles: 多肽/环肽的smiles
-    
-    :param df: 已知氨基酸名称和smiles对应表格, 格式: Smiles,Name,Names
-    
-    :return: 氨基酸全称列表
+    :param smiles: SMILES of the peptide/cyclic peptide
+
+    :param df: table mapping known amino acid names to SMILES, format: Smiles,Name,Names
+
+    :return: list of full amino acid names
 
     """
     uncharger = rdMolStandardize.Uncharger()
@@ -82,7 +82,7 @@ def smiles2seq(smiles: str, df: pd.DataFrame):
         max_subaa = None
         standard_fragsmi = Chem.MolToSmiles(frag_mol, isomericSmiles=False)
         for name, names, smi, inc in df.values:
-            # 把片段和df中的smiles都转成无立体异构的形式, 注: 因此无法区分d型氨基酸!
+            # Convert both the fragment and the SMILES in df to a form without stereochemistry; note: D-amino acids therefore cannot be distinguished!
             standard_aamol = Chem.MolFromSmiles(smi)
             Chem.RemoveStereochemistry(standard_aamol)
             standard_aasmi = Chem.MolToSmiles(standard_aamol)
@@ -137,7 +137,7 @@ def smiles2seq(smiles: str, df: pd.DataFrame):
     for atom in mol.GetAtoms():
         atom.SetProp('atomNote', str(atom.GetIdx()))
         
-    # 找到所有匹配两个氨基酸骨架相连的原子index
+    # Find all atom indices where two amino acid backbones are connected
     smarts_list = []
     
     c_len = 3
@@ -168,7 +168,7 @@ def smiles2seq(smiles: str, df: pd.DataFrame):
     
     heads = []
     head2tail = {}
-    # 构建前,中,后相连接的氨基酸链, head2tail: {当前氨基酸: [上一个氨基酸, [下一个氨基酸列表]]}, 氨基酸: (N端index, C端index)
+    # Build the connected amino acid chain (before, middle, after); head2tail: {current amino acid: [previous amino acid, [next amino acid list]]}, amino acid: (N-terminal index, C-terminal index)
     for i, match_pair in enumerate(matches):
         flag = False
         nc_indx = N_C_index(match_pair=match_pair, matches_list=matches_list)
@@ -182,19 +182,19 @@ def smiles2seq(smiles: str, df: pd.DataFrame):
             {tmp_aa: tmp_links, next_aa: next_links}
         )
         for j in range(len(matches)):
-            # 如果某个氨基酸对中的N端出现在其他的氨基酸对中，则认为不是头部
+            # If the N-terminus of an amino acid pair appears in other amino acid pairs, it is not considered a head
             if i != j and tmp_aa[0] in matches[j][3:]:
                 flag = True
                 break
         if not flag:
             heads.append(tmp_aa)
 
-    # 如果没有头部, 而且不止一个氨基酸, 就按照(首尾酰胺键单环)环肽处理
+    # If there is no head and there is more than one amino acid, treat it as a cyclic peptide (head-to-tail amide bond single ring)
     if heads == []:
         nc_indx = N_C_index(matches[0], matches_list)
         heads.append(tuple(nc_indx[:2]))
 
-    # heads中可能有多个头部, 进行切割后判断哪个更长就视为主骨架, 其余的不切割作为某个氨基酸的侧链
+    # heads may contain multiple heads; after fragmentation, the longest one is regarded as the main backbone, and the rest are left uncut as side chains of some amino acid
     def get_sub_seqs(head, top_head, head2tail, mol, df):
         if head is None:
             return [[]], [[]]
@@ -212,20 +212,20 @@ def smiles2seq(smiles: str, df: pd.DataFrame):
 
         for next_aa in next_aa_list:
             ed_mol = Chem.EditableMol(mol)
-            # 切割当前氨基酸的N和上一个氨基酸的C(=O)之间的连键
+            # Cut the bond between the N of the current amino acid and the C(=O) of the previous amino acid
             if last_aa:
                 ed_mol.RemoveBond(last_aa[1], tmp_aa[0])
-            # 切割当前氨基酸的C(=O)和下一个氨基酸的N之间的连键
+            # Cut the bond between the C(=O) of the current amino acid and the N of the next amino acid
             if next_aa:
                 ed_mol.RemoveBond(tmp_aa[1], next_aa[0])
 
             broken_mol = ed_mol.GetMol()
             fragments = rdmolops.GetMolFrags(broken_mol, asMols=True, sanitizeFrags=True)
             
-            # # 如果切割完片段数在非头尾时是2或者在头尾出是1, 则认为包含侧链成环
+            # # If the number of fragments after cutting is 2 for non-head/tail or 1 for head/tail, it is considered to contain a side-chain ring
             # if len(fragments) == 2 - (tmp_aa == head or next_aa is None):
             for frag in fragments:
-                # 目前只考虑二硫键
+                # Currently only disulfide bonds are considered
                 ss_mode = Chem.MolFromSmarts('[NH2]C(CSSCC(N)C(=O))[CH1](=O)')
                 ss_match = frag.GetSubstructMatch(ss_mode)
                 ed_mol = Chem.EditableMol(frag)
@@ -236,7 +236,7 @@ def smiles2seq(smiles: str, df: pd.DataFrame):
                 for sub_frag in sub_fragments:
                     flag = 0
                     for atom in sub_frag.GetAtoms():
-                        # 在片段中找出当前氨基酸
+                        # Find the current amino acid in the fragment
                         if atom.GetProp('atomNote') == tmp_aa_N:
                             flag = 1
                             break
@@ -288,7 +288,7 @@ def smiles2seq(smiles: str, df: pd.DataFrame):
 
 def DL_change(name_to_smiles, inchi_to_name, aa_seqs_ls, aa_smiles_ls):
 
-    # 预计算氨基酸的InChI和SMILES模式
+    # Precompute the InChI and SMILES pattern of each amino acid
     aa_data = []
     for smi in aa_smiles_ls:
         mol = Chem.MolFromSmiles(smi)
@@ -299,18 +299,18 @@ def DL_change(name_to_smiles, inchi_to_name, aa_seqs_ls, aa_smiles_ls):
     aa_smis_ls_new = []
     for seq, data, smi in zip(aa_seqs_ls, aa_data, aa_smiles_ls):
         if seq == 'X':
-            new_seq = seq # 不在我们自定义的氨基酸列表中
+            new_seq = seq # Not in our custom amino acid list
 
         else:
             new_seq = inchi_to_name.get(data['inchi'], 0)
-            if new_seq: # 完全匹配我们自定义的氨基酸列表中
-                pass 
-            elif '*' in seq: # 模糊匹配我们自定义的氨基酸列表中
-                # 检查手性
-                seq_type = seq[:-1]  # 去掉*
+            if new_seq: # Exactly matches our custom amino acid list
+                pass
+            elif '*' in seq: # Fuzzy match against our custom amino acid list
+                # Check chirality
+                seq_type = seq[:-1]  # Remove *
                 new_seq = process_chiral_sequence(seq, seq_type, data['mol'], name_to_smiles)
             else:
-                seq_type = seq # 与我们自定义的氨基酸手性存在差别
+                seq_type = seq # Chiral difference from our custom amino acids
                 new_seq = process_chiral_sequence(seq, seq_type, data['mol'], name_to_smiles)
         new_smi = name_to_smiles.get(new_seq, smi) 
         aa_seqs_ls_new.append(new_seq)
@@ -319,12 +319,12 @@ def DL_change(name_to_smiles, inchi_to_name, aa_seqs_ls, aa_smiles_ls):
 
 
 def process_chiral_sequence(seq, seq_type, mol, name_to_smiles):
-    """处理手性序列的逻辑"""
+    """Logic for handling chiral sequences"""
     pattern_smiles = name_to_smiles[seq_type]
-    aa_mol = Chem.MolFromSmiles(pattern_smiles) # 氨基酸结构
-    aa_gene_pattern = Chem.MolFromSmarts('[NH2]-[C@H,C@@H](-C(=O)O)') # 氨基酸结构通式部分
+    aa_mol = Chem.MolFromSmiles(pattern_smiles) # Amino acid structure
+    aa_gene_pattern = Chem.MolFromSmarts('[NH2]-[C@H,C@@H](-C(=O)O)') # General structure pattern of amino acid
 
-    # 检查手性中心
+    # Check chiral centers
     aa_chiral_centers = Chem.FindMolChiralCenters(aa_mol, force=True)
     aa_gene_matches = set(chain(*(aa_mol.GetSubstructMatches(aa_gene_pattern))))
 
@@ -333,7 +333,7 @@ def process_chiral_sequence(seq, seq_type, mol, name_to_smiles):
 
     for atom_id, aa_chiral in aa_chiral_centers:
         if atom_id in aa_gene_matches:
-            # 查找匹配的模式
+            # Find matching patterns
             mol_matches = set(chain(*(mol.GetSubstructMatches(aa_mol))))
             mol_gene_matches = set(chain(*(mol.GetSubstructMatches(aa_gene_pattern))))
             matches = mol_matches & mol_gene_matches
@@ -356,19 +356,19 @@ def peptide_smiles2seq(smiles):
     name_to_smiles = dict(zip(aa_all['Name'], aa_all['Smiles']))
     inchi_to_name = dict(zip(aa_all['InChi'], aa_all['Name']))
 
-    # 将smiles切割为氨基酸，此时无法区分氨基酸残基的手性
+    # Fragment the SMILES into amino acids; the chirality of amino acid residues cannot be distinguished at this stage
     acid_seqs, acid_chukles = smiles2seq(smiles, aa_all)
     if acid_seqs is None or acid_chukles is None:
         return None
 
-    # 通过切割后的SMILES来修正氨基酸的手性
+    # Correct the chirality of amino acids using the fragmented SMILES
     acid_seqs_update, acid_smiles_updata = DL_change(name_to_smiles, inchi_to_name, acid_seqs, acid_chukles)
 
-    # 处理末端修饰 映射回原始的序列
+    # Handle terminal modifications and map back to the original sequence
     func_seq_ls = acid_seqs_update.copy()
     func_seq_smiles = acid_smiles_updata.copy()
 
-    # 将C端修饰和N端修饰映射回修饰的氨基酸表示
+    # Map C-terminal and N-terminal modifications back to the modified amino acid representation
     if 'ac' in acid_seqs_update[0]:
         func_seq_ls[0] = acid_seqs_update[0].replace('ac', '')
         func_seq_smiles[0] = name_to_smiles.get(func_seq_ls[0], func_seq_smiles[0])

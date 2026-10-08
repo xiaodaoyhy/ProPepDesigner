@@ -3,11 +3,21 @@
 
 
 # python evaluate_models.py \
-#     --csv "./seed_*/modeling_data_predict_*.csv" \
+#     --csv "./seed_sequence_cluster*/modeling_data_predict_*.csv" \
 #     --y_cols mean_pEC50_GIPR_activity mean_pEC50_GLP1R_activity mean_pEC50_GCGR_activity \
 #     --y_pred_cols pred_mean_pEC50_GIPR_activity pred_mean_pEC50_GLP1R_activity pred_mean_pEC50_GCGR_activity \
 #     --split_col TrTe \
-#     --output_csv model_evaluation_long.csv
+#     --output_csv model_sequence_cluster_evaluation_long.csv
+
+
+# python evaluate_models.py \
+#     --csv "./seed_label_stratify*/modeling_data_predict_*.csv" \
+#     --y_cols mean_pEC50_GIPR_activity mean_pEC50_GLP1R_activity mean_pEC50_GCGR_activity \
+#     --y_pred_cols pred_mean_pEC50_GIPR_activity pred_mean_pEC50_GLP1R_activity pred_mean_pEC50_GCGR_activity \
+#     --split_col TrTe \
+#     --output_csv model_label_stratify_evaluation_long.csv
+
+
 
 
 

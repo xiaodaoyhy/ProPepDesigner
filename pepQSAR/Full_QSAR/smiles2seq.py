@@ -17,7 +17,7 @@ def convert_to_chuckles(aa_smiles):
         mol = pybel.readstring('smi', aa_smiles)
         n_term_pat = pybel.Smarts('[$([ND1,ND2]CC(O)=O)]') # Match N-terminal via SMARTS pattern
         c_term_pat = pybel.Smarts('[$([OD1]C(=O)C[ND1,ND2])]') # Match C-terminal via SMARTS pattern
-        # 是N端和C端原子的索引
+        # Indices of the N-terminal and C-terminal atoms
         n_term_idx = n_term_pat.findall(mol)[0][0] 
         c_term_idx = c_term_pat.findall(mol)[0][0]
         # Reorder atoms using OBConversion, set N- and C-terminal atoms as start and end of SMILES

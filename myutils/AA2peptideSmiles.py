@@ -10,20 +10,20 @@ RDLogger.DisableLog('rdApp.*')
 
 
 
-# 氨基酸的CHUCKLES表示
+# CHUCKLES representation of an amino acid
 def convert_to_chuckles(aa_smiles):
     try:
         mol = pybel.readstring('smi', aa_smiles)
-        n_term_pat = pybel.Smarts('[$([ND1,ND2]CC(O)=O)]') # 通过SMARTS模式匹配 N 端
-        c_term_pat = pybel.Smarts('[$([OD1]C(=O)C[ND1,ND2])]') # 通过SMARTS模式匹配 C 端
-        # 是N端和C端原子的索引
+        n_term_pat = pybel.Smarts('[$([ND1,ND2]CC(O)=O)]') # Match the N-terminus via a SMARTS pattern
+        c_term_pat = pybel.Smarts('[$([OD1]C(=O)C[ND1,ND2])]') # Match the C-terminus via a SMARTS pattern
+        # Indices of the N-terminal and C-terminal atoms
         n_term_idx = n_term_pat.findall(mol)[0][0]
         c_term_idx = c_term_pat.findall(mol)[0][0]
-        # 使用OBConversion重排原子顺序，将N端和C端原子设为SMILES的起点和终点
+        # Rearrange atom order via OBConversion, setting the N-terminal and C-terminal atoms as the start and end of the SMILES
         rearranger = openbabel.OBConversion()
         rearranger.SetInAndOutFormats('smi', 'smi')
-        rearranger.AddOption('f', openbabel.OBConversion.OUTOPTIONS, str(n_term_idx)) # 指定SMILES的起始原子
-        rearranger.AddOption('l', openbabel.OBConversion.OUTOPTIONS, str(c_term_idx)) # 指定SMILES的结束原子
+        rearranger.AddOption('f', openbabel.OBConversion.OUTOPTIONS, str(n_term_idx)) # Specify the starting atom of the SMILES
+        rearranger.AddOption('l', openbabel.OBConversion.OUTOPTIONS, str(c_term_idx)) # Specify the ending atom of the SMILES
         outmol = openbabel.OBMol()
         rearranger.ReadString(outmol, aa_smiles)
         return rearranger.WriteString(outmol).strip()
@@ -53,8 +53,8 @@ def remove_backbone_charges(original_smiles):
 def smiles_to_chuckles(amino_acid):
     # Preprocessing
     uncharged_aa = uncharger(amino_acid)
-    if uncharged_aa:  # 处理带电荷的结构
-        uncharged_aa = remove_backbone_charges(uncharged_aa) # 处理带电荷的结构
+    if uncharged_aa:  # Handle charged structures
+        uncharged_aa = remove_backbone_charges(uncharged_aa) # Handle charged structures
         # Convert to CHUCKLES
         chuckles_aa = convert_to_chuckles(uncharged_aa)
     else:
@@ -66,7 +66,7 @@ def peptide2chuckles(amino_acids):
     return aas
 
 
-# peptide 线性拓扑的构建
+# Build the linear topology of the peptide
 def linear(smiles):
     smiles[-1] = smiles[-1] +'O'
     return smiles

@@ -11,22 +11,26 @@ if __name__ == "__main__":
 
     # ['PhysChem', 'RDKit', 'ESM', 'NNAA', 'ECFP4', 'CTD']
     feature_type = ['ESM', 'RDKit', 'NNAA']
-
-    
     seed_ls = [7,27,29,39,40]
-    # seed_ls = [40]
+
+    # Available: 'label_stratify', 'sequence_cluster', or 'ecfp_cluster'
+    # split_method = 'label_stratify'
+    # split_method = 'ecfp_cluster'
+    split_method = 'sequence_cluster'
+
 
     model_dirs = Path(__file__).resolve().parent
-    run_type = 'train'
-    csv_path="../../data/result/TargetData_removeLongside.csv"
 
-    # run_type='predict'
+    run_type='predict'
+    # run_type = 'train'
+    # csv_path="../../data/result/TargetData_removeLongside.csv"
 
 
     # temp(csv_path, task_name)
     for seed in seed_ls:
-        model_dir = Path(model_dirs) / f'seed_{seed}'
-        # csv_path = model_dir / 'modeling_data.csv'
+        model_dir = Path(model_dirs) / f'seed_{split_method}_{seed}'
+        csv_path = model_dir / 'TargetData_removeLongside_split.csv'
+
 
         # ====== Configuration template ======
         # Base config (file paths & task names)
@@ -36,12 +40,13 @@ if __name__ == "__main__":
             model_dir=model_dir,
             peptide_seq_ls_name='pep_sequence_model',
             peptide_smis_ls_name='pep_smiles_model',
-            main_smis_name='Backbone_smiles',
+            smiles_name='washsmi_Iso',
 
             activity_columns=task_name,
             feature_type=feature_type,
             split_ratio=0.1,
-            split_method='stratify',
+            split_method=split_method,
+
         )
 
 
@@ -49,19 +54,22 @@ if __name__ == "__main__":
         config = TrainConfigNew(
             **base_kwargs,
             seed=seed,
+            sequence_identity_threshold=0.95,
+            ecfp_similarity_threshold=0.95,
+            ecfp_radius=3,
+            ecfp_n_bits=1024,
+            ecfp_use_chirality=True,
             batch_size=64,
             num_epochs=200,
             early_stop_patience=10,    # Early stopping patience
             hidden=[512, 128],
-            # hidden=[256, 128],
-            # hidden=[64, 32],
-
             dropout=0.2,
             lr=1e-4,
             weight_decay=1e-4,
             task_weight_strategy="inverse_freq"  # Auto-compute weights from train-set valid label counts
 
         )
+
 
         trainer = MultiTaskMLPTrainer(config)
         if run_type == 'train':

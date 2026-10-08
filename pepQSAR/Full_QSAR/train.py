@@ -13,7 +13,12 @@ from rdkit import Chem
 from embedding import getEmbedding
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from data_split import stratify_split_indices, random_split_indices
+from data_split import (
+    ecfp_cluster_split_indices,
+    stratify_split_indices,
+    random_split_indices,
+    sequence_cluster_split_indices, 
+)
 import model_base_pooling as model_base
 # import model_base
 from pathlib import Path
@@ -32,7 +37,13 @@ class TrainConfigNew:
     activity_columns: List[str]
     predict_columns: List[str] = None  # Output column names when predicting
     split_ratio: float = 0.1  # Training/validation/test split ratio
-    split_method: str = "random"  # 'random' or 'stratify'
+    split_method: str = "random"  # 'random', 'stratify', or 'sequence_cluster'
+    sequence_identity_threshold: float = 0.95
+    smiles_name: str = "washsmi_Iso"
+    ecfp_similarity_threshold: float = 0.95
+    ecfp_radius: int = 3
+    ecfp_n_bits: int = 1024
+    ecfp_use_chirality: bool = True
 
     # Training hyperparameters
     seed: int = 42
@@ -108,19 +119,98 @@ class MultiTaskTransformerTrainer:
 
         activity_array = self.df[self.config.activity_columns].values
 
-        # Split before calculating embedding to avoid standardization leakage
-        train_idx, val_idx, test_idx = stratify_split_indices(
+        # ===== choose random / stratify / sequence-cluster split =====
+        split_method = (self.config.split_method or "stratify").lower()
+        sequence_cluster_ids = None
+        normalized_backbones = None
+        ecfp_cluster_ids = None
+        canonical_cluster_smiles = None
+
+        if split_method == "random":
+            train_idx, val_idx, test_idx = random_split_indices(
+                len(activity_array),
+                val_ratio=self.config.split_ratio,
+                test_ratio=self.config.split_ratio,
+                seed=self.config.seed,
+            )
+        elif split_method == "stratify":
+            train_idx, val_idx, test_idx = stratify_split_indices(
                 activity_array,
                 val_ratio=self.config.split_ratio,
                 test_ratio=self.config.split_ratio,
                 seed=self.config.seed,
                 n_bins=3,
             )
+        elif split_method == "sequence_cluster":
+            (
+                train_idx,
+                val_idx,
+                test_idx,
+                sequence_cluster_ids,
+                normalized_backbones,
+            ) = sequence_cluster_split_indices(
+                sequences=fasta_list,
+                y=activity_array,
+                val_ratio=self.config.split_ratio,
+                test_ratio=self.config.split_ratio,
+                seed=self.config.seed,
+                identity_threshold=self.config.sequence_identity_threshold,
+                n_bins=3,
+            )
+        elif split_method == "ecfp_cluster":
+            if self.config.smiles_name not in self.df.columns:
+                raise ValueError(
+                    f"Missing ECFP clustering column: "
+                    f"{self.config.smiles_name!r}."
+                )
+            (
+                train_idx,
+                val_idx,
+                test_idx,
+                ecfp_cluster_ids,
+                canonical_cluster_smiles,
+            ) = ecfp_cluster_split_indices(
+                smiles=self.df[self.config.smiles_name].tolist(),
+                y=activity_array,
+                val_ratio=self.config.split_ratio,
+                test_ratio=self.config.split_ratio,
+                seed=self.config.seed,
+                similarity_threshold=self.config.ecfp_similarity_threshold,
+                radius=self.config.ecfp_radius,
+                n_bits=self.config.ecfp_n_bits,
+                use_chirality=self.config.ecfp_use_chirality,
+                n_bins=3,
+            )
+        else:
+            raise ValueError(
+                f"Unknown split_method: {self.config.split_method}. "
+                "Use 'random', 'stratify', 'sequence_cluster', or 'ecfp_cluster'."
+            )
 
         print(f'train_number:{len(train_idx)}, val_number:{len(val_idx)}, test_number:{len(test_idx)}')
         self.df['TrTe'] = 'Train'
         self.df.loc[val_idx, 'TrTe'] = 'Validation'
         self.df.loc[test_idx, 'TrTe'] = 'Test'
+
+        # ===== save Full-QSAR cluster information for split auditing =====
+        if sequence_cluster_ids is not None:
+            self.df['SequenceCluster'] = sequence_cluster_ids
+            cluster_size_map = self.df['SequenceCluster'].value_counts().to_dict()
+            self.df['SequenceClusterSize'] = self.df['SequenceCluster'].map(cluster_size_map)
+            self.df['SequenceIdentityThreshold'] = self.config.sequence_identity_threshold
+            self.df['NormalizedBackboneSequence'] = [
+                repr(list(sequence)) for sequence in normalized_backbones
+            ]
+        elif ecfp_cluster_ids is not None:
+            self.df['ECFPCluster'] = ecfp_cluster_ids
+            cluster_size_map = self.df['ECFPCluster'].value_counts().to_dict()
+            self.df['ECFPClusterSize'] = self.df['ECFPCluster'].map(cluster_size_map)
+            self.df['ECFPSimilarityThreshold'] = self.config.ecfp_similarity_threshold
+            self.df['ECFPRadius'] = self.config.ecfp_radius
+            self.df['ECFPBits'] = self.config.ecfp_n_bits
+            self.df['ECFPUseChirality'] = self.config.ecfp_use_chirality
+            self.df['CanonicalClusterSMILES'] = canonical_cluster_smiles
+
         self.df.to_csv(Path(self.config.model_dir) / Path(self.config.csv_path.replace('.csv', '_split.csv')).name, index=None)
 
 
