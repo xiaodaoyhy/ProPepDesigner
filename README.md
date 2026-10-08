@@ -4,7 +4,7 @@
 
 [![Python 3.8](https://img.shields.io/badge/python-3.8.13-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21053403.svg)](https://doi.org/10.5281/zenodo.21053403)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21319236.svg)](https://doi.org/10.5281/zenodo.21319236)
 
 
 
@@ -19,7 +19,7 @@ ProPepDesigner is a hierarchical computational workflow that integrates deep gen
 
 The Zenodo record provides a **complete snapshot** of ProPepDesigner, including the full source code, pre-trained and finetuned generative models, sampling/RL outputs, and pre-training datasets. This is the recommended route for reproducing the results reported in the paper.
 
-**Zenodo record:** https://doi.org/10.5281/zenodo.21053403
+**Zenodo record:** https://doi.org/10.5281/zenodo.21319236
 
 ```bash
 cd ProPepDesigner
@@ -111,7 +111,7 @@ Manuscript in preparation/under review. The citation will be updated shortly upo
 
 ## Code and Data Availability
 
-The complete ProPepDesigner release—including the full source code, pre-trained generative models, sampling/RL outputs, and pre-training datasets—is archived on Zenodo: https://doi.org/10.5281/zenodo.21053403.
+The complete ProPepDesigner release—including the full source code, pre-trained generative models, sampling/RL outputs, and pre-training datasets—is archived on Zenodo: https://doi.org/10.5281/zenodo.21319236.
 
 The source code is also maintained on GitHub (https://github.com/xiaodaoyhy/ProPepDesigner) for version tracking and community access; large files excluded from GitHub can be obtained from the Zenodo archive.
 
