@@ -1,6 +1,6 @@
 # ProPepDesigner
 
-**ProPepDesigner: AI-driven de novo design of long-acting GIPR/GLP-1R/GCGR triple agonists for obesity therapy**
+**ProPepDesigner: Template-based de novo design of long-acting GIPR/GLP-1R/GCGR triple agonists for obesity therapy**
 
 [![Python 3.8](https://img.shields.io/badge/python-3.8.13-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
